@@ -24,7 +24,8 @@
     const $ = (sel, root = document) => root.querySelector(sel);
     const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-    const el = (tag, attrs = {}, ...children) => {
+    const el = (tag, attrs, ...children) => {
+        attrs = attrs || {};
         const node = document.createElement(tag);
         for (const [k, v] of Object.entries(attrs)) {
             if (k === 'class') node.className = v;

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Darabia · Consola de Peritaje Psicosocial · Caso 05</title>
+    <meta name="description" content="Simulador de peritaje psicosocial — IES Virgen del Pilar, Zaragoza · Módulo de Psicosociología Aplicada (PRL).">
+
+    <!-- Tipografía -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ===================================================================
+         RAÍZ ÚNICA · El motor renderiza dentro de #darabia-root
+         La capa de UI inyecta toda la estructura visual al iniciar.
+         =================================================================== -->
+    <div id="darabia-root">
+        <!-- Pantalla de arranque (visible mientras carga el JSON del caso) -->
+        <div class="portada" id="boot-screen">
+            <div class="portada-card">
+                <div class="portada-eyebrow">Darabia Engine v5</div>
+                <div class="portada-title">Cargando expediente psicosocial...</div>
+                <div class="portada-sub" id="boot-msg">
+                    Inicializando motor ciego y validando estructura del caso.
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.72rem;color:var(--text-3);">
+                    <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.2s ease-in-out infinite;"></div>
+                    Esto debería durar menos de 2 segundos.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================
+         PORTADA DE REGISTRO · se muestra cuando el motor está listo y el
+         alumno aún no se ha validado. Reemplaza el contenido de #darabia-root.
+         =================================================================== -->
+    <template id="tpl-registro">
+        <div class="portada">
+            <div class="portada-card">
+                <div class="portada-eyebrow">Darabia · Caso 05 · Gestoría Moreno</div>
+                <div class="portada-title">Peritaje psicosocial</div>
+                <div class="portada-sub">
+                    Has sido asignado/a como técnico de Prevención de Riesgos Laborales para el expediente
+                    <strong style="color:var(--text-1);">VA-2026-PSI-047</strong>. Tu trabajo: investigar, triangular evidencias y emitir un dictamen.
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label" for="reg-nombre">Nombre y apellidos</label>
+                    <input class="field-input" type="text" id="reg-nombre" placeholder="Ej. Carla Martínez López" autocomplete="name">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label" for="reg-grupo">Grupo</label>
+                    <input class="field-input" type="text" id="reg-grupo" placeholder="Ej. 2º PRL — Vespertino" autocomplete="off">
+                </div>
+
+                <button class="btn-primary" id="btn-iniciar-peritaje" disabled>
+                    Iniciar peritaje →
+                </button>
+
+                <div style="margin-top:18px;font-family:var(--mono);font-size:.66rem;color:var(--text-3);text-align:center;letter-spacing:.06em;">
+                    IES VIRGEN DEL PILAR · ZARAGOZA · CURSO 2025–2026
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- ===================================================================
+         ERROR FATAL · si el motor no puede arrancar.
+         =================================================================== -->
+    <template id="tpl-error">
+        <div class="portada">
+            <div class="portada-card" style="border-color:rgba(255,77,106,.3);">
+                <div class="portada-eyebrow" style="color:var(--red);">Error de arranque</div>
+                <div class="portada-title">No se ha podido cargar el simulador</div>
+                <div class="portada-sub" id="error-msg">
+                    Detalle del error.
+                </div>
+                <button class="btn-primary" onclick="location.reload()">Reintentar</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ===================================================================
+         SCORM (pipwerks) · solo se carga si está disponible en el LMS.
+         =================================================================== -->
+    <!-- <script src="./scorm/pipwerks.js"></script> -->
+
+    <!-- ===================================================================
+         MOTOR (Fase 1) · ya cerrado y validado
+         =================================================================== -->
+    <script src="./script_caso05_core.js"></script>
+
+    <!-- ===================================================================
+         UI (Fase 4) · capa de presentación
+         =================================================================== -->
+    <script src="./script_ui.js"></script>
+
+    <!-- ===================================================================
+         ORQUESTADOR · arranque secuencial
+         =================================================================== -->
+    <script>
+    (async function () {
+        'use strict';
+
+        const $ = (sel) => document.querySelector(sel);
+
+        // 1. Esperar a que el motor cargue el JSON
+        const ok = await window.Darabia.iniciar();
+        if (!ok) {
+            mostrarError('No se ha podido cargar el JSON del caso. Verifica que psicosocial_gestoria.json está accesible.');
+            return;
+        }
+
+        // 2. Si el alumno ya estaba validado en una sesión previa, ir directo a la consola
+        if (window.Darabia.estado?.alumno?.validado) {
+            arrancarConsola();
+        } else {
+            mostrarRegistro();
+        }
+
+        // -----------------------------------------------------------------
+        function mostrarRegistro() {
+            const root = $('#darabia-root');
+            const tpl = $('#tpl-registro');
+            root.innerHTML = '';
+            root.appendChild(tpl.content.cloneNode(true));
+
+            const nombre = $('#reg-nombre');
+            const grupo = $('#reg-grupo');
+            const btn = $('#btn-iniciar-peritaje');
+
+            const validar = () => {
+                btn.disabled = !nombre.value.trim();
+            };
+
+            nombre.addEventListener('input', validar);
+            grupo.addEventListener('input', validar);
+            nombre.focus();
+
+            const onSubmit = () => {
+                if (btn.disabled) return;
+                const ok = window.Darabia.registrarAlumno(nombre.value, grupo.value);
+                if (!ok) {
+                    alert('Por favor, introduce tu nombre.');
+                    return;
+                }
+                arrancarConsola();
+            };
+
+            btn.addEventListener('click', onSubmit);
+            [nombre, grupo].forEach(input => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') onSubmit();
+                });
+            });
+        }
+
+        function arrancarConsola() {
+            // Llama al boot de DarabiaUI que monta el shell completo
+            if (typeof window.__darabiaUIBoot === 'function') {
+                window.__darabiaUIBoot();
+            } else {
+                console.error('[BOOT] DarabiaUI no inicializada.');
+                mostrarError('Error en la capa de presentación.');
+            }
+        }
+
+        function mostrarError(msg) {
+            const root = $('#darabia-root');
+            const tpl = $('#tpl-error');
+            root.innerHTML = '';
+            root.appendChild(tpl.content.cloneNode(true));
+            const node = $('#error-msg');
+            if (node) node.textContent = msg;
+        }
+
+        // Persistir progreso al cerrar
+        window.addEventListener('beforeunload', () => {
+            try {
+                if (window.Darabia?.Persistencia?.guardar) {
+                    window.Darabia.Persistencia.guardar();
+                }
+            } catch (e) { /* silent */ }
+        });
+    })();
+    </script>
+
+</body>
+</html>

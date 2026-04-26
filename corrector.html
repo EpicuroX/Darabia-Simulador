@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Darabia · Corrector docente</title>
+
+    <!-- Esta herramienta es independiente del simulador del alumno.
+         Solo el profesor accede a ella. URL no enlazada desde el simulador. -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+           CORRECTOR DOCENTE · estilos autocontenidos
+           Herencia visual del simulador (tokens iguales) pero archivo
+           independiente para que pueda desplegarse por separado.
+           ============================================================ */
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0d1420;
+            --bg-input: #111827;
+            --bg-elev: #131a26;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-mid: rgba(255, 255, 255, 0.15);
+            --border-strong: rgba(255, 255, 255, 0.25);
+            --text-1: #f0f4ff;
+            --text-2: #94a3b8;
+            --text-3: #4b5675;
+            --green: #10d98a;
+            --red: #ff4d6a;
+            --amber: #f59e0b;
+            --blue: #60a5fa;
+            --mono: 'JetBrains Mono', ui-monospace, monospace;
+            --r: 12px;
+            --r-sm: 8px;
+            --r-lg: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            background: var(--bg);
+            color: var(--text-1);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        button {
+            font: inherit;
+            color: inherit;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.06);
+            border-radius: 6px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        /* ── HEADER ────────────────────────────────────────────────── */
+        .topbar {
+            height: 56px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            background: rgba(13, 20, 32, 0.85);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+        }
+        .topbar-mark {
+            width: 28px; height: 28px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, var(--amber), #d18707);
+            display: grid;
+            place-items: center;
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: 0.78rem;
+            color: #1a1100;
+            margin-right: 12px;
+        }
+        .topbar-title {
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+        .topbar-sub {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--text-3);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding-left: 12px;
+            margin-left: 12px;
+            border-left: 1px solid var(--border-mid);
+        }
+        .topbar-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+        .topbar-btn {
+            height: 32px;
+            padding: 0 12px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--border-mid);
+            background: var(--bg-elev);
+            color: var(--text-2);
+            font-size: 0.78rem;
+            transition: all 160ms;
+        }
+        .topbar-btn:hover { border-color: var(--border-strong); color: var(--text-1); }
+
+        /* ── LAYOUT ────────────────────────────────────────────────── */
+        .container {
+            flex: 1;
+            max-width: 1080px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+
+        h1.page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            margin-bottom: 8px;
+        }
+        .page-sub {
+            color: var(--text-2);
+            font-size: 0.92rem;
+            margin-bottom: 28px;
+            line-height: 1.65;
+        }
+
+        /* ── PANEL ─────────────────────────────────────────────────── */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--amber);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .panel-title.green { color: var(--green); }
+        .panel-title.blue { color: var(--blue); }
+        .panel-title.red { color: var(--red); }
+
+        /* ── FORM ──────────────────────────────────────────────────── */
+        .field-group { margin-bottom: 16px; }
+
+        .field-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-2);
+            margin-bottom: 6px;
+        }
+
+        .field-help {
+            font-size: 0.72rem;
+            color: var(--text-3);
+            margin-top: 4px;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-mid);
+            border-radius: var(--r-sm);
+            color: var(--text-1);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.92rem;
+            transition: border-color 160ms;
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        .field-textarea {
+            min-height: 280px;
+            resize: vertical;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.65;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 700px) {
+            .row { grid-template-columns: 1fr; }
+        }
+
+        .row-counts {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--text-3);
+            margin-top: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-primary {
+            width: 100%;
+            height: 46px;
+            margin-top: 8px;
+            background: var(--amber);
+            color: #1a1100;
+            border-radius: var(--r-sm);
+            font-weight: 700;
+            font-size: 0.92rem;
+            letter-spacing: 0.02em;
+            transition: all 160ms;
+        }
+        .btn-primary:hover { background: #d18707; transform: translateY(-1px); }
+        .btn-primary:disabled {
+            background: var(--bg-elev);
+            color: var(--text-3);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-action {
+            height: 38px;
+            padding: 0 16px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--border-mid);
+            background: var(--bg-elev);
+            color: var(--text-1);
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 160ms;
+        }
+        .btn-action:hover { border-color: var(--border-strong); }
+
+        /* ── ESTADOS ───────────────────────────────────────────────── */
+        .alert {
+            padding: 14px 16px;
+            border-radius: var(--r-sm);
+            font-size: 0.88rem;
+            line-height: 1.55;
+            margin-top: 16px;
+            border-left: 3px solid;
+        }
+        .alert.error {
+            background: rgba(255,77,106,0.06);
+            border-color: var(--red);
+            color: var(--text-1);
+        }
+        .alert.success {
+            background: rgba(16,217,138,0.06);
+            border-color: var(--green);
+            color: var(--text-1);
+        }
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        /* ── LOADING ───────────────────────────────────────────────── */
+        .loading {
+            display: none;
+            padding: 24px;
+            text-align: center;
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            color: var(--text-2);
+            line-height: 1.85;
+        }
+        .loading.is-visible { display: block; }
+        .loading-dot {
+            display: inline-block;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--amber);
+            margin-right: 8px;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.35; }
+        }
+
+        /* ── RESULTADO ─────────────────────────────────────────────── */
+        .result { display: none; }
+        .result.is-visible { display: block; }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .result-meta {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--text-3);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .result-veredicto {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.015em;
+        }
+
+        .result-pts {
+            font-family: var(--mono);
+            font-weight: 700;
+            color: var(--green);
+            font-size: 1.2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        @media (max-width: 700px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        .stat-card {
+            background: var(--bg-elev);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            padding: 14px 16px;
+        }
+        .stat-card-label {
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+        .stat-card-value {
+            font-family: var(--mono);
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1;
+        }
+        .stat-card-value .max {
+            font-weight: 400;
+            color: var(--text-3);
+            font-size: 0.95rem;
+        }
+
+        /* ── SECCIÓN BLOQUE DOCENTE (lo importante) ───────────────── */
+        .docente-block {
+            background: linear-gradient(180deg, rgba(245,158,11,0.04), var(--bg-card));
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: var(--r);
+            padding: 22px 24px;
+            margin-bottom: 16px;
+        }
+
+        .docente-block .label {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--amber);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .docente-block .text {
+            font-size: 0.92rem;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            color: var(--text-1);
+        }
+
+        .lista {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .lista li {
+            padding-left: 18px;
+            position: relative;
+            font-size: 0.88rem;
+            color: var(--text-1);
+            line-height: 1.6;
+        }
+        .lista li::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            color: var(--amber);
+            font-weight: 700;
+        }
+
+        /* ── BARRAS de criterios ────────────────────────────────── */
+        .bars-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .bar-item { display: flex; flex-direction: column; gap: 5px; }
+        .bar-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+        .bar-name {
+            font-size: 0.82rem;
+            color: var(--text-1);
+            font-weight: 500;
+        }
+        .bar-score {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--green);
+            font-weight: 600;
+        }
+        .bar-score .max {
+            color: var(--text-3);
+            font-weight: 400;
+        }
+        .bar-track {
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), #0ec47c);
+            border-radius: 3px;
+            transition: width 600ms cubic-bezier(.4,0,.2,1);
+        }
+        .bar-fill.low { background: linear-gradient(90deg, var(--red), #cc3a55); }
+        .bar-fill.mid { background: linear-gradient(90deg, var(--amber), #d18707); }
+
+        /* ── COMPACTO en mobile ──────────────────────────────────── */
+        @media (max-width: 600px) {
+            .container { padding: 20px 16px 48px; }
+            .panel { padding: 18px; }
+            .topbar-sub { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="topbar-mark">D</div>
+        <div>
+            <div class="topbar-title">Darabia · Corrector docente</div>
+            <div class="topbar-sub">Acceso restringido · Modo profesor</div>
+        </div>
+        <div class="topbar-actions">
+            <button class="topbar-btn" id="btn-cerrar-sesion" title="Olvidar token y limpiar formulario">
+                Cerrar sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <h1 class="page-title">Reevaluar dictamen</h1>
+        <p class="page-sub">
+            Esta herramienta llama al endpoint <code style="font-family:var(--mono);font-size:.85rem;color:var(--blue);">/api/evaluar?destinatario=docente</code>
+            con autenticación Bearer y devuelve los dos bloques de la evaluación: el feedback que vio el alumno
+            y el bloque docente con la nota de asesoramiento, sugerencia de calificación manual y alertas de corrección.
+            <br><br>
+            <strong style="color:var(--text-1);">Importante:</strong> el modelo tiene cierta variabilidad. La nota automática
+            que obtengas aquí puede no ser exactamente la que vio el alumno, pero el bloque docente es la fuente
+            de verdad para la corrección manual del 40%.
+        </p>
+
+        <!-- ─────────── PANEL: Configuración del backend ─────────── -->
+        <section class="panel">
+            <div class="panel-title">1 · Configuración</div>
+
+            <div class="row">
+                <div class="field-group">
+                    <label class="field-label" for="cfg-endpoint">Endpoint del backend</label>
+                    <input class="field-input" type="text" id="cfg-endpoint"
+                           placeholder="https://darabia.vercel.app/api/evaluar"
+                           value="/api/evaluar"
+                           autocomplete="off">
+                    <div class="field-help">
+                        Si abres este corrector en la misma URL del simulador, deja <code style="font-family:var(--mono);">/api/evaluar</code>.
+                        En otro caso, pon la URL completa.
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="cfg-token">PROFESOR_TOKEN</label>
+                    <input class="field-input" type="password" id="cfg-token"
+                           placeholder="Token configurado en Vercel"
+                           autocomplete="off">
+                    <div class="field-help">
+                        El token vive en variables de entorno de Vercel. Se guarda solo en sessionStorage de este navegador
+                        (se borra al cerrar el navegador o al pulsar Cerrar sesión).
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─────────── PANEL: Datos del alumno + dictamen ─────────── -->
+        <section class="panel">
+            <div class="panel-title green">2 · Dictamen del alumno</div>
+
+            <div class="row">
+                <div class="field-group">
+                    <label class="field-label" for="alumno-nombre">Nombre y apellidos</label>
+                    <input class="field-input" type="text" id="alumno-nombre"
+                           placeholder="Carla Martínez López"
+                           autocomplete="off">
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="alumno-grupo">Grupo</label>
+                    <input class="field-input" type="text" id="alumno-grupo"
+                           placeholder="2º PRL · Vespertino"
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="caso-id">Caso</label>
+                <input class="field-input" type="text" id="caso-id"
+                       value="psicosocial_gestoria_v1"
+                       autocomplete="off">
+                <div class="field-help">
+                    Identificador del caso. Para el Caso 05, deja el valor por defecto.
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="dictamen">Dictamen completo del alumno</label>
+                <textarea class="field-input field-textarea" id="dictamen"
+                          placeholder="Pega aquí el texto completo del dictamen que el alumno ha entregado..."
+                          spellcheck="false"></textarea>
+                <div class="row-counts">
+                    <span id="char-count">0 caracteres · 0 palabras</span>
+                    <span id="char-min" style="color:var(--text-3);">Mínimo: 200 caracteres</span>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="btn-evaluar" disabled>
+                Re-evaluar y obtener bloque docente →
+            </button>
+        </section>
+
+        <!-- ─────────── ALERT BOX ─────────── -->
+        <div id="alert-box"></div>
+
+        <!-- ─────────── LOADING ─────────── -->
+        <div class="loading" id="loading">
+            <div><span class="loading-dot"></span>Llamando a Anthropic vía proxy Vercel...</div>
+            <div style="opacity:.6;margin-top:6px;">Esto suele tardar entre 6 y 15 segundos.</div>
+        </div>
+
+        <!-- ─────────── RESULTADO ─────────── -->
+        <section class="result" id="result">
+
+            <!-- Cabecera con nota global y acciones -->
+            <div class="panel">
+                <div class="result-header">
+                    <div>
+                        <div class="result-meta" id="result-meta">Reevaluación · —</div>
+                        <div class="result-veredicto" id="result-veredicto">—</div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn-action" onclick="window.print()">Imprimir</button>
+                        <button class="btn-action" id="btn-copiar-todo">Copiar resumen</button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-label">Nota automática (60%)</div>
+                        <div class="stat-card-value" id="stat-auto">—<span class="max"> / 100</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Sugerencia manual (40%)</div>
+                        <div class="stat-card-value" id="stat-sug">—<span class="max"> / 40</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Knockouts aplicados</div>
+                        <div class="stat-card-value" id="stat-ko">—</div>
+                    </div>
+                </div>
+
+                <div class="result-meta" style="margin-top:8px;">Criterios de la rúbrica</div>
+                <div class="bars-list" id="bars-criterios"></div>
+            </div>
+
+            <!-- BLOQUE DOCENTE: nota de asesoramiento -->
+            <div class="docente-block">
+                <div class="label">Nota de asesoramiento al docente</div>
+                <div class="text" id="docente-nota">—</div>
+            </div>
+
+            <!-- BLOQUE DOCENTE: knockouts aplicados -->
+            <div class="panel" id="panel-knockouts" style="display:none;">
+                <div class="panel-title red">Knockouts aplicados</div>
+                <ul class="lista" id="lista-knockouts"></ul>
+            </div>
+
+            <!-- BLOQUE DOCENTE: alertas de corrección -->
+            <div class="panel" id="panel-alertas" style="display:none;">
+                <div class="panel-title">Alertas para la corrección manual</div>
+                <ul class="lista" id="lista-alertas"></ul>
+            </div>
+
+            <!-- BLOQUE ALUMNO: lo que el alumno ha visto -->
+            <details class="panel" style="cursor:pointer;">
+                <summary style="list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+                    <div class="panel-title green" style="margin:0;">Bloque pedagógico (lo que ha visto el alumno)</div>
+                    <span style="color:var(--text-3);font-size:.85rem;">▾</span>
+                </summary>
+                <div style="margin-top:16px;display:flex;flex-direction:column;gap:14px;">
+                    <div>
+                        <div style="font-family:var(--mono);font-size:.65rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Perfil técnico</div>
+                        <div id="alumno-perfil" style="font-size:.92rem;line-height:1.65;"></div>
+                    </div>
+                    <div id="block-error-critico" style="display:none;">
+                        <div style="font-family:var(--mono);font-size:.65rem;color:var(--red);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Error crítico mostrado</div>
+                        <div id="alumno-error-critico" style="font-size:.92rem;line-height:1.65;"></div>
+                    </div>
+                    <div>
+                        <div style="font-family:var(--mono);font-size:.65rem;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Qué ha hecho bien</div>
+                        <ul class="lista" id="alumno-bien"></ul>
+                    </div>
+                    <div>
+                        <div style="font-family:var(--mono);font-size:.65rem;color:var(--amber);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Qué puede mejorar</div>
+                        <ul class="lista" id="alumno-mejorar"></ul>
+                    </div>
+                </div>
+            </details>
+
+        </section>
+    </main>
+
+    <!-- ============================================================
+         LÓGICA · vanilla JS, sin dependencias externas
+         ============================================================ -->
+    <script>
+    (function () {
+        'use strict';
+
+        // ── DOM helpers ─────────────────────────────────────────────
+        const $ = (s) => document.querySelector(s);
+        const STORAGE_KEY = 'darabia_corrector_v1';
+
+        const refs = {
+            endpoint: $('#cfg-endpoint'),
+            token: $('#cfg-token'),
+            nombre: $('#alumno-nombre'),
+            grupo: $('#alumno-grupo'),
+            casoId: $('#caso-id'),
+            dictamen: $('#dictamen'),
+            charCount: $('#char-count'),
+            btnEvaluar: $('#btn-evaluar'),
+            btnCerrar: $('#btn-cerrar-sesion'),
+            btnCopiar: $('#btn-copiar-todo'),
+            alert: $('#alert-box'),
+            loading: $('#loading'),
+            result: $('#result'),
+            // resultados
+            resultMeta: $('#result-meta'),
+            resultVeredicto: $('#result-veredicto'),
+            statAuto: $('#stat-auto'),
+            statSug: $('#stat-sug'),
+            statKo: $('#stat-ko'),
+            bars: $('#bars-criterios'),
+            docNota: $('#docente-nota'),
+            panelKO: $('#panel-knockouts'),
+            listaKO: $('#lista-knockouts'),
+            panelAlertas: $('#panel-alertas'),
+            listaAlertas: $('#lista-alertas'),
+            // bloque alumno
+            alumnoPerfil: $('#alumno-perfil'),
+            alumnoBien: $('#alumno-bien'),
+            alumnoMejorar: $('#alumno-mejorar'),
+            blockEC: $('#block-error-critico'),
+            alumnoEC: $('#alumno-error-critico'),
+        };
+
+        // ── Persistencia local (sessionStorage para token, ya que es sensible)
+        function cargarSesion() {
+            try {
+                const raw = sessionStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                if (s.endpoint) refs.endpoint.value = s.endpoint;
+                if (s.token) refs.token.value = s.token;
+            } catch (_) {}
+        }
+        function guardarSesion() {
+            try {
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    endpoint: refs.endpoint.value.trim(),
+                    token: refs.token.value, // sessionStorage se borra al cerrar navegador
+                }));
+            } catch (_) {}
+        }
+        function limpiarSesion() {
+            try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) {}
+            refs.token.value = '';
+            refs.nombre.value = '';
+            refs.grupo.value = '';
+            refs.dictamen.value = '';
+            ocultarResultado();
+            mostrarAlert('Sesión cerrada. El token y los datos del formulario se han borrado.', 'success');
+            actualizarValidaciones();
+        }
+
+        // ── Validación del formulario en tiempo real
+        function actualizarValidaciones() {
+            const n = refs.dictamen.value.trim().length;
+            const palabras = n === 0 ? 0 : refs.dictamen.value.trim().split(/\s+/).length;
+            refs.charCount.textContent = `${n.toLocaleString('es-ES')} caracteres · ${palabras.toLocaleString('es-ES')} palabras`;
+
+            const ok = refs.endpoint.value.trim().length > 0
+                && refs.token.value.trim().length >= 16
+                && refs.nombre.value.trim().length > 0
+                && refs.casoId.value.trim().length > 0
+                && n >= 200;
+
+            refs.btnEvaluar.disabled = !ok;
+        }
+
+        function mostrarAlert(msg, tipo) {
+            const cls = tipo === 'success' ? 'success' : 'error';
+            const titulo = tipo === 'success' ? 'OK' : 'Error';
+            refs.alert.innerHTML = `
+                <div class="alert ${cls}">
+                    <div class="alert-title">${titulo}</div>
+                    <div>${msg}</div>
+                </div>`;
+        }
+
+        function ocultarAlert() { refs.alert.innerHTML = ''; }
+        function mostrarLoading(v) { refs.loading.classList.toggle('is-visible', !!v); }
+        function ocultarResultado() { refs.result.classList.remove('is-visible'); }
+
+        // ── Llamada al endpoint docente
+        async function evaluar() {
+            ocultarAlert();
+            ocultarResultado();
+            mostrarLoading(true);
+            refs.btnEvaluar.disabled = true;
+            guardarSesion();
+
+            const endpoint = refs.endpoint.value.trim();
+            const url = endpoint.includes('?')
+                ? endpoint + '&destinatario=docente'
+                : endpoint + '?destinatario=docente';
+
+            const payload = {
+                caso_id: refs.casoId.value.trim(),
+                version_motor: '5.0.0',
+                alumno: {
+                    nombre: refs.nombre.value.trim(),
+                    grupo: refs.grupo.value.trim(),
+                },
+                dictamen: {
+                    texto_completo: refs.dictamen.value,
+                },
+            };
+
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + refs.token.value.trim(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (resp.status === 401) {
+                    throw new Error('PROFESOR_TOKEN inválido. Revisa el token configurado en Vercel.');
+                }
+                if (resp.status === 429) {
+                    throw new Error('Límite de cuota de Anthropic alcanzado. Inténtalo en unos minutos.');
+                }
+                if (resp.status === 402) {
+                    throw new Error('Sin saldo en la cuenta de Anthropic.');
+                }
+                if (!resp.ok) {
+                    let detalle = '';
+                    try {
+                        const j = await resp.json();
+                        detalle = j?.error?.mensaje || '';
+                    } catch (_) {}
+                    throw new Error(`HTTP ${resp.status}${detalle ? ' · ' + detalle : ''}`);
+                }
+
+                const data = await resp.json();
+                pintarResultado(data);
+                mostrarAlert('Evaluación recuperada correctamente.', 'success');
+
+            } catch (err) {
+                console.error('[CORRECTOR] Error:', err);
+                mostrarAlert(err.message || 'Error desconocido al evaluar.', 'error');
+            } finally {
+                mostrarLoading(false);
+                actualizarValidaciones();
+            }
+        }
+
+        // ── Render del resultado
+        function pintarResultado(data) {
+            const ctx = data.contexto || {};
+            const ba = data.bloque_alumno || {};
+            const bd = data.bloque_docente || {};
+            const nota = data.nota_global ?? 0;
+
+            refs.resultMeta.textContent =
+                `Reevaluación docente · ${(ctx.alumno?.nombre || '—')}${ctx.alumno?.grupo ? ' · ' + ctx.alumno.grupo : ''}`;
+            refs.resultVeredicto.textContent = clasificarNota(nota);
+
+            refs.statAuto.innerHTML = `${nota}<span class="max"> / 100</span>`;
+            refs.statSug.innerHTML = (typeof bd.sugerencia_calificacion_40_manual === 'number')
+                ? `${bd.sugerencia_calificacion_40_manual}<span class="max"> / 40</span>`
+                : `—<span class="max"> / 40</span>`;
+            refs.statKo.textContent = String((bd.knockouts_aplicados || []).length);
+
+            // Barras de criterios (escala según peso del criterio)
+            refs.bars.innerHTML = '';
+            const detalle = data.detalle_criterios || {};
+            for (const [id, item] of Object.entries(detalle)) {
+                const max = (item && typeof item.max === 'number') ? item.max : 10;
+                const pts = (item && typeof item.puntuacion === 'number') ? item.puntuacion : 0;
+                const pct = max > 0 ? Math.min(100, (pts / max) * 100) : 0;
+                const lvl = (pts / max) >= 0.7 ? '' : (pts / max) >= 0.4 ? 'mid' : 'low';
+
+                const div = document.createElement('div');
+                div.className = 'bar-item';
+                div.innerHTML = `
+                    <div class="bar-row">
+                        <div class="bar-name">${escapeHtml(humanize(id))}</div>
+                        <div class="bar-score">${pts}<span class="max"> / ${max}</span></div>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill ${lvl}" style="width:${pct}%"></div>
+                    </div>
+                    ${item?.observacion ? `<div style="font-size:.78rem;color:var(--text-3);margin-top:2px;">${escapeHtml(item.observacion)}</div>` : ''}
+                `;
+                refs.bars.appendChild(div);
+            }
+
+            // Nota docente
+            refs.docNota.textContent = bd.nota_asesoramiento_docente || '(sin nota docente)';
+
+            // Knockouts
+            const kos = bd.knockouts_aplicados || [];
+            if (kos.length > 0) {
+                refs.panelKO.style.display = '';
+                refs.listaKO.innerHTML = '';
+                kos.forEach(ko => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${escapeHtml(ko.id)}</strong> · −${ko.penalizacion} pts · ${escapeHtml(ko.motivo || '')}`;
+                    refs.listaKO.appendChild(li);
+                });
+            } else {
+                refs.panelKO.style.display = 'none';
+            }
+
+            // Alertas
+            const alertas = bd.alertas_correccion || [];
+            if (alertas.length > 0) {
+                refs.panelAlertas.style.display = '';
+                refs.listaAlertas.innerHTML = '';
+                alertas.forEach(a => {
+                    const li = document.createElement('li');
+                    li.textContent = a;
+                    refs.listaAlertas.appendChild(li);
+                });
+            } else {
+                refs.panelAlertas.style.display = 'none';
+            }
+
+            // Bloque alumno
+            refs.alumnoPerfil.textContent = ba.perfil_tecnico || '—';
+            refs.alumnoBien.innerHTML = '';
+            (ba.que_has_hecho_bien || []).forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = t;
+                refs.alumnoBien.appendChild(li);
+            });
+            refs.alumnoMejorar.innerHTML = '';
+            (ba.que_puedes_mejorar || []).forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = t;
+                refs.alumnoMejorar.appendChild(li);
+            });
+            if (ba.error_critico) {
+                refs.blockEC.style.display = '';
+                refs.alumnoEC.textContent = ba.error_critico;
+            } else {
+                refs.blockEC.style.display = 'none';
+            }
+
+            refs.result.classList.add('is-visible');
+
+            // Scroll al resultado
+            requestAnimationFrame(() => {
+                refs.result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+
+        // ── Resumen para portapapeles
+        function copiarResumen() {
+            const meta = refs.resultMeta.textContent;
+            const ver = refs.resultVeredicto.textContent;
+            const auto = refs.statAuto.innerText;
+            const sug = refs.statSug.innerText;
+            const ko = refs.statKo.innerText;
+            const nota = refs.docNota.textContent;
+            const txt =
+`DARABIA · Resumen de corrección
+${meta}
+Veredicto: ${ver}
+Nota automática: ${auto.replace(/\s+/g, ' ').trim()}
+Sugerencia manual: ${sug.replace(/\s+/g, ' ').trim()}
+Knockouts: ${ko}
+
+NOTA DE ASESORAMIENTO DOCENTE:
+${nota}
+`;
+            navigator.clipboard.writeText(txt).then(() => {
+                mostrarAlert('Resumen copiado al portapapeles.', 'success');
+            }).catch(() => {
+                mostrarAlert('No se pudo copiar al portapapeles.', 'error');
+            });
+        }
+
+        // ── Helpers
+        function escapeHtml(s) {
+            return String(s ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function humanize(id) {
+            return String(id || '').replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+        }
+        function clasificarNota(n) {
+            if (n >= 88) return 'Excelente · Apto con mención';
+            if (n >= 65) return 'Competente · Apto';
+            if (n >= 50) return 'Suficiente · Apto con observaciones';
+            return 'No apto · Reformulación requerida';
+        }
+
+        // ── Wire up eventos
+        ['endpoint', 'token', 'nombre', 'grupo', 'casoId', 'dictamen'].forEach(k => {
+            refs[k].addEventListener('input', actualizarValidaciones);
+        });
+        refs.btnEvaluar.addEventListener('click', evaluar);
+        refs.btnCerrar.addEventListener('click', limpiarSesion);
+        refs.btnCopiar.addEventListener('click', copiarResumen);
+
+        // ── Init
+        cargarSesion();
+        actualizarValidaciones();
+    })();
+    </script>
+
+</body>
+</html>
